@@ -6,7 +6,7 @@ import dask.array as da
 ZARR_PATH = './output.zarr'
 
 
-def generate_coalescent_synthetic_data(length=1e7, mu=3.5e-9, rrate=1e-8, sample_size=1000, Ne=1, seed=57):
+def generate_coalescent_synthetic_data(length=1e7, mu=3.5e-9, rrate=1e-8, sample_size=1000, Ne=1, ploidy=2, seed=57):
     """
         Function credits: Nick Harding
         Reference URL: https://hardingnj.github.io/2017/08/23/power-of-correct-tools.html
@@ -30,7 +30,7 @@ def generate_coalescent_synthetic_data(length=1e7, mu=3.5e-9, rrate=1e-8, sample
     #    print(variant.index, variant.position, variant.genotypes, sep="\t")
 
     ht = allel.HaplotypeArray(V)
-    gt = ht.to_genotypes(ploidy=2)
+    gt = ht.to_genotypes(ploidy=ploidy)
     gt = allel.GenotypeDaskArray(gt)  # Convert to underlying Dask array
 
     print('Num Allele Calls: {}'.format(gt.n_allele_calls))
@@ -40,24 +40,17 @@ def generate_coalescent_synthetic_data(length=1e7, mu=3.5e-9, rrate=1e-8, sample
 
     # Save the genotype data to zarr store
     print('Saving data to zarr directory')
-    gt = gt.rechunk((65536, 64, 2))
+    gt = gt.rechunk((65536, 64, ploidy))
     da.to_zarr(arr=gt, url=ZARR_PATH, component='calldata/GT', overwrite=True)
 
     print('done')
 
 
 if __name__ == '__main__':
-    """
     generate_coalescent_synthetic_data(length=22553061,  # Number of bases
                                        mu=3.5e-9,
                                        rrate=1e-8,
                                        sample_size=100000 * 2,
-                                       Ne=10000,  # Effective diploid population size
-                                       seed=57)
-    """
-    generate_coalescent_synthetic_data(length=22553061,  # Number of bases
-                                       mu=3.5e-9,
-                                       rrate=1e-8,
-                                       sample_size=2548 * 2,
                                        Ne=1000,  # Effective diploid population size
+                                       ploidy=2,
                                        seed=57)
