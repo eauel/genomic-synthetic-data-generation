@@ -1,7 +1,12 @@
 import msprime
+import allel
+import numpy as np
+import dask.array as da
+
+ZARR_PATH = './output.zarr'
 
 
-def generate_coalescent_synthetic_data(pop_cfg, dem_hist, length=1e7, mu=3.5e-9, rrate=1e-8, seed=57):
+def generate_coalescent_synthetic_data(length=1e7, mu=3.5e-9, rrate=1e-8, sample_size=1000, Ne=1, seed=57):
     """
         Function credits: Nick Harding
         Reference URL: https://hardingnj.github.io/2017/08/23/power-of-correct-tools.html
@@ -9,22 +14,50 @@ def generate_coalescent_synthetic_data(pop_cfg, dem_hist, length=1e7, mu=3.5e-9,
     tree_sequence = msprime.simulate(length=length,
                                      recombination_rate=rrate,
                                      mutation_rate=mu,
-                                     random_seed=seed,
-                                     population_configurations=pop_cfg,
-                                     demographic_events=dem_hist)
+                                     sample_size=sample_size,
+                                     Ne=Ne,
+                                     random_seed=seed)
 
     # Print the number of mutations in tree sequence
-    # print("Simulated ", tree_sequence.get_num_mutations(), "mutations")
+    print("Simulated ", tree_sequence.get_num_mutations(), "mutations")
+
+    V = np.zeros(shape=(tree_sequence.get_num_mutations(), tree_sequence.get_sample_size()), dtype=np.int8)
+
+    for variant in tree_sequence.variants():
+        V[variant.index] = variant.genotypes
+
+    # for variant in tree_sequence.variants():
+    #    print(variant.index, variant.position, variant.genotypes, sep="\t")
+
+    ht = allel.HaplotypeArray(V)
+    gt = ht.to_genotypes(ploidy=2)
+    gt = allel.GenotypeDaskArray(gt)  # Convert to underlying Dask array
+
+    print('Num Allele Calls: {}'.format(gt.n_allele_calls))
+    print('Num Calls: {}'.format(gt.n_calls))
+    print('Num Samples: {}'.format(gt.n_samples))
+    print('Num Variants: {}'.format(gt.n_variants))
+
+    # Save the genotype data to zarr store
+    print('Saving data to zarr directory')
+    gt = gt.rechunk((65536, 64, 2))
+    da.to_zarr(arr=gt, url=ZARR_PATH, component='calldata/GT', overwrite=True)
+
+    print('done')
 
 
 if __name__ == '__main__':
-    dem_hist = [
-        msprime.PopulationParametersChange(time=20, growth_rate=-0.25, population_id=0),
-        msprime.PopulationParametersChange(time=40, growth_rate=0, population_id=0)
-    ]
-
-    pop_cfg = [
-        msprime.PopulationConfiguration(sample_size=100, initial_size=1000, growth_rate=0)
-    ]
-
-    generate_coalescent_synthetic_data(pop_cfg, dem_hist)
+    """
+    generate_coalescent_synthetic_data(length=22553061,  # Number of bases
+                                       mu=3.5e-9,
+                                       rrate=1e-8,
+                                       sample_size=100000 * 2,
+                                       Ne=10000,  # Effective diploid population size
+                                       seed=57)
+    """
+    generate_coalescent_synthetic_data(length=22553061,  # Number of bases
+                                       mu=3.5e-9,
+                                       rrate=1e-8,
+                                       sample_size=2548 * 2,
+                                       Ne=1000,  # Effective diploid population size
+                                       seed=57)
