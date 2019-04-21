@@ -1,7 +1,7 @@
 import msprime
-import allel
 import numpy as np
 import dask.array as da
+from sdg.DaskUtils import *
 
 ZARR_PATH = './output.zarr'
 
@@ -65,6 +65,8 @@ def generate_coalescent_synthetic_data(num_samples=1000, num_bases=1e7, Ne=1e4, 
 
 
 if __name__ == '__main__':
+    connect_dask(address='127.0.0.1', port=8786)
+
     generate_coalescent_synthetic_data(num_samples=2548,
                                        num_bases=50e6,
                                        Ne=1e4,

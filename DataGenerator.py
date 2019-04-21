@@ -1,14 +1,5 @@
-from distributed import Client
-
 from sdg.RandomSyntheticData import *
-
-
-def connect_dask(address, port):
-    # Connect to Dask scheduler
-    print('[Dask Utils] Connecting to Dask scheduler.')
-    client = Client('{}:{}'.format(address, port))
-    return client
-
+from sdg.DaskUtils import *
 
 ZARR_PATH = './output.zarr'
 
