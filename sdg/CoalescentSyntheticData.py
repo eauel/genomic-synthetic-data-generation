@@ -32,7 +32,7 @@ def generate_coalescent_synthetic_data(num_samples=1000, num_bases=1e7, Ne=1e4, 
     root = zarr.group(store=store, overwrite=True)
 
     print('Creating Zarr Array')
-    compressor = Blosc(cname='zstd', clevel=0, shuffle=Blosc.AUTOSHUFFLE)
+    compressor = Blosc(cname='zstd', clevel=1, shuffle=Blosc.AUTOSHUFFLE)
     z_shape = (tree_sequence.get_num_mutations(), num_samples, ploidy)
     z_chunks = (VARIANTS_PER_CHUNK, SAMPLES_PER_CHUNK, ploidy)
     z = root.empty('calldata/GT', shape=z_shape,
