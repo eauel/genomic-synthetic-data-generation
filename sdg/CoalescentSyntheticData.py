@@ -5,7 +5,8 @@ from etaprogress.progress import ProgressBar
 import sys
 
 ZARR_PATH = './output.zarr'
-VARIANTS_PER_CHUNK = 64
+VARIANTS_PER_CHUNK = 16384
+SAMPLES_PER_CHUNK = 16384
 
 
 def generate_coalescent_synthetic_data(num_samples=1000, num_bases=1e7, Ne=1e4, mu=3.5e-9, rrate=1e-8,
@@ -33,7 +34,7 @@ def generate_coalescent_synthetic_data(num_samples=1000, num_bases=1e7, Ne=1e4, 
     print('Creating Zarr Array')
     compressor = Blosc(cname='zstd', clevel=1, shuffle=Blosc.AUTOSHUFFLE)
     z_shape = (tree_sequence.get_num_mutations(), num_samples, ploidy)
-    z_chunks = (VARIANTS_PER_CHUNK, z_shape[1], z_shape[2])
+    z_chunks = (VARIANTS_PER_CHUNK, SAMPLES_PER_CHUNK, ploidy)
     z = root.empty('calldata/GT', shape=z_shape,
                    chunks=z_chunks,
                    dtype='i1',
@@ -66,9 +67,10 @@ def generate_coalescent_synthetic_data(num_samples=1000, num_bases=1e7, Ne=1e4, 
 
 if __name__ == '__main__':
     generate_coalescent_synthetic_data(num_samples=100000,
-                                       num_bases=50e6,
+                                       num_bases=3e9,
                                        Ne=1e4,
                                        mu=3.5e-9,
-                                       rrate=1e-8,
+                                       # rrate=1e-8,
+                                       rrate=0,
                                        ploidy=2,
                                        seed=57)
