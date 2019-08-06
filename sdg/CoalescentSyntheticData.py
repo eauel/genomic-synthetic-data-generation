@@ -16,12 +16,12 @@ def generate_coalescent_synthetic_data(num_samples=1000, num_bases=1e7, Ne=1e4, 
     """
     tree_sequence = msprime.simulate(
         sample_size=num_samples * ploidy,
-		Ne=Ne,
-		length=num_bases,
-		recombination_rate=rrate,
-		mutation_rate=mu,
+        Ne=Ne,
+        length=num_bases,
+        recombination_rate=rrate,
+        mutation_rate=mu,
         random_seed=seed,
-		model="dtwf")
+        model="dtwf")
 
     # Print the number of mutations in tree sequence
     print("Simulated ", tree_sequence.get_num_mutations(), "mutations")
