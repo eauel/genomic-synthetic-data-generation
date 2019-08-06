@@ -33,6 +33,7 @@ setup(
         'distributed',
         'numpy',
         'msprime',
+        'etaprogress'
     ],
     entry_points={
         'console_scripts': [
