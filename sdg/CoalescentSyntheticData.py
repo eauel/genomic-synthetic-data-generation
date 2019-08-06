@@ -3,14 +3,23 @@ import zarr
 from numcodecs import Blosc
 from etaprogress.progress import ProgressBar
 import sys
+import random
 
-ZARR_PATH = './output.zarr'
+# ZARR_PATH = './output.zarr'
 VARIANTS_PER_CHUNK = 64
+
+
 # SAMPLES_PER_CHUNK = 16384
 
 
-def generate_coalescent_synthetic_data(num_samples=1000, num_bases=1e7, Ne=1e4, mu=3.5e-9, rrate=1e-8,
-                                       ploidy=2, seed=57):
+def generate_coalescent_synthetic_data(dataset_name: str, seed: int = 57):
+    num_samples = 100000
+    num_bases = 3e9
+    Ne = 1e4
+    mu = 3.5e-9
+    rrate = 0
+    ploidy = 2
+
     """
         Function credits: Nick Harding
         Reference URL: https://hardingnj.github.io/2017/08/23/power-of-correct-tools.html
@@ -28,7 +37,7 @@ def generate_coalescent_synthetic_data(num_samples=1000, num_bases=1e7, Ne=1e4, 
     print("Simulated ", tree_sequence.get_num_mutations(), "mutations")
 
     print("Creating Zarr data store root")
-    store = zarr.DirectoryStore(ZARR_PATH)
+    store = zarr.DirectoryStore(dataset_name)
     root = zarr.group(store=store, overwrite=True)
 
     print('Creating Zarr Array')
@@ -66,6 +75,22 @@ def generate_coalescent_synthetic_data(num_samples=1000, num_bases=1e7, Ne=1e4, 
 
 
 if __name__ == '__main__':
+    import threading
+
+    num_datasets = 10
+    threads = []
+    for i in range(num_datasets):
+        dataset_name = "sdg.{}.zarr".format(i + 1)
+        rand_seed = random.randint(1, 100000)
+        t = threading.Thread(target=generate_coalescent_synthetic_data, args=(dataset_name, rand_seed,))
+        t.start()
+        threads.append(t)
+
+    # Wait for all threads to finish
+    for t in threads:
+        t.join()
+
+    """
     generate_coalescent_synthetic_data(num_samples=100000,
                                        num_bases=3e9,
                                        Ne=1e4,
@@ -74,3 +99,4 @@ if __name__ == '__main__':
                                        rrate=0,
                                        ploidy=2,
                                        seed=57)
+    """
