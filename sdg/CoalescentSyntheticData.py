@@ -5,7 +5,7 @@ from etaprogress.progress import ProgressBar
 import sys
 
 ZARR_PATH = './output.zarr'
-VARIANTS_PER_CHUNK = 2048
+VARIANTS_PER_CHUNK = 64
 # SAMPLES_PER_CHUNK = 16384
 
 
