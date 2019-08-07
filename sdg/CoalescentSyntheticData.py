@@ -76,8 +76,8 @@ def generate_coalescent_synthetic_data(num_samples=1000, num_bases=1e7, Ne=1e4, 
 
 
 if __name__ == '__main__':
-    generate_coalescent_synthetic_data(num_samples=1000,
-                                       num_bases=3e5,
+    generate_coalescent_synthetic_data(num_samples=100000,
+                                       num_bases=3e9,
                                        Ne=1e4,
                                        mu=3.5e-9,
                                        rrate=0,
