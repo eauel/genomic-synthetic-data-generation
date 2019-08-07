@@ -6,7 +6,6 @@ import sys
 
 ZARR_PATH = './output.zarr'
 VARIANTS_PER_CHUNK = 64
-# SAMPLES_PER_CHUNK = 16384
 
 
 def generate_coalescent_synthetic_data(num_samples=1000, num_bases=1e7, Ne=1e4, mu=3.5e-9, rrate=1e-8,
@@ -32,9 +31,9 @@ def generate_coalescent_synthetic_data(num_samples=1000, num_bases=1e7, Ne=1e4, 
     root = zarr.group(store=store, overwrite=True)
 
     print('Creating Zarr Array')
-    compressor = Blosc(cname='zstd', clevel=0, shuffle=Blosc.AUTOSHUFFLE)
+    compressor = Blosc(cname='zstd', clevel=1, shuffle=Blosc.AUTOSHUFFLE)
     z_shape = (tree_sequence.get_num_mutations(), num_samples, ploidy)
-    z_chunks = (VARIANTS_PER_CHUNK, num_samples, ploidy)
+    z_chunks = (VARIANTS_PER_CHUNK, None, ploidy)
     z = root.empty('calldata/GT', shape=z_shape,
                    chunks=z_chunks,
                    dtype='i1',
@@ -51,6 +50,7 @@ def generate_coalescent_synthetic_data(num_samples=1000, num_bases=1e7, Ne=1e4, 
 
     bar = ProgressBar(tree_sequence.get_num_mutations(), max_width=80)
     print("Pulling variant data...")
+    z_temp = zarr.zeros(shape=z_shape, compressor=compressor, chunks=z_chunks)
     variant_counter = 0
     for variant in tree_sequence.variants():
         bar.numerator = variant_counter
@@ -58,19 +58,21 @@ def generate_coalescent_synthetic_data(num_samples=1000, num_bases=1e7, Ne=1e4, 
         sys.stdout.flush()
 
         var = variant.genotypes.reshape((num_samples, ploidy))
-        z[variant.index, :, :] = var
+        z_temp[variant.index, :, :] = var
         variant_counter += 1
+
+    # Update the Zarr directory store with the data in memory
+    z[:, :, :] = z_temp
 
     print('Done.\n')
     print(z.info)
 
 
 if __name__ == '__main__':
-    generate_coalescent_synthetic_data(num_samples=100000,
-                                       num_bases=3e9,
+    generate_coalescent_synthetic_data(num_samples=1000,
+                                       num_bases=3e6,
                                        Ne=1e4,
                                        mu=3.5e-9,
-                                       # rrate=1e-8,
                                        rrate=0,
                                        ploidy=2,
                                        seed=57)
