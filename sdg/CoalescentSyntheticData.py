@@ -5,9 +5,13 @@ from etaprogress.progress import ProgressBar
 import sys
 
 ZARR_PATH = './output.zarr'
-VARIANTS_PER_CHUNK = 1
-SAMPLES_PER_CHUNK = None
+VARIANTS_PER_CHUNK = 16384
+SAMPLES_PER_CHUNK = 16384
 PLOIDY_PER_CHUNK = None
+
+TEMP_VARIANTS_PER_CHUNK = 1
+TEMP_SAMPLES_PER_CHUNK = None
+TEMP_PLOIDY_PER_CHUNK = None
 
 
 def generate_coalescent_synthetic_data(num_samples=1000, num_bases=1e7, Ne=1e4, mu=3.5e-9, rrate=1e-8,
@@ -41,6 +45,15 @@ def generate_coalescent_synthetic_data(num_samples=1000, num_bases=1e7, Ne=1e4, 
                    dtype='i1',
                    compressor=compressor)
 
+    print('Creating temporary Zarr Array for holding data')
+    temp_chunks = (TEMP_VARIANTS_PER_CHUNK, TEMP_SAMPLES_PER_CHUNK, TEMP_PLOIDY_PER_CHUNK)
+    temp_store = zarr.TempStore(dir='./')
+    temp_root = zarr.group(store=temp_store, overwrite=True)
+    temp_z = temp_root.empty('calldata/GT', shape=z_shape,
+                             chunks=temp_chunks,
+                             dtype='i1',
+                             compressor=None)
+
     num_variants = z.shape[0]
     num_samples = z.shape[1]
     num_ploidy = z.shape[2]
@@ -59,8 +72,11 @@ def generate_coalescent_synthetic_data(num_samples=1000, num_bases=1e7, Ne=1e4, 
         sys.stdout.flush()
 
         var = variant.genotypes.reshape((num_samples, ploidy))
-        z[variant.index, :, :] = var
+        temp_z[variant.index, :, :] = var
         variant_counter += 1
+
+    # Store data in final data store
+    z[:, :, :] = temp_z
 
     print('Done.\n')
     print(z.info)
